@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: nbgms-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: nbgms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+
+    ports:
+      - "127.0.0.1:5432:5432"  # Bind to localhost only for security
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro  # Auto-run .sql/.sh on first start
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nbgms"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    # Development-friendly resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 256M
+
+    # Optional: log rotation
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    name: nbgms_postgres_data  # Named volume for easier management
